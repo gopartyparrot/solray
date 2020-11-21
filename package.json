@@ -1,0 +1,23 @@
+{
+  "name": "soldo",
+  "version": "1.0.0",
+  "main": "./lib/index.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w"
+  },
+  "dependencies": {
+    "@solana/spl-token": "^0.0.13",
+    "@solana/web3.js": "^0.86.4",
+    "bip32": "^2.0.6",
+    "bip39": "^3.0.3",
+    "bs58": "^4.0.1",
+    "tweetnacl": "^1.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^14.14.6",
+    "ts-node-dev": "^1.0.0",
+    "typescript": "^4.0.5"
+  }
+}
