@@ -54,11 +54,31 @@ interface MintToParams {
   token: PublicKey
   to: PublicKey
   amount: bigint
-
   mintAuthority: Account
+  multiSigners: Array<Account>
+}
+
+interface ApproveParams {
+  account: PublicKey
+  delegate: PublicKey
+  amount: bigint
+  approveAuthority: Account,
+  multiSigners: Array<Account>,
+}
+
+interface RevokeParams {
+  account: PublicKey
+  revokeAuthority: Account,
+  multiSigners: Array<Account>,
 }
 
 interface MintToInstructionParams extends MintToParams {
+}
+
+interface ApproveInstructionParams extends ApproveParams {
+}
+
+interface RevokeInstructionParams extends RevokeParams {
 }
 
 export class SPLToken extends BaseProgram {
@@ -206,6 +226,7 @@ export class SPLToken extends BaseProgram {
       token,
       to,
       mintAuthority,
+      multiSigners,
     } = params
 
     const layout = BufferLayout.struct([
@@ -213,14 +234,22 @@ export class SPLToken extends BaseProgram {
       uint64('amount'),
     ])
 
+    let keys: Array<any> = [
+      { write: token },
+      { write: to }
+    ]
+
+    if (multiSigners.length === 0) {
+      keys.push(mintAuthority)
+    } else {
+      keys.push(mintAuthority.publicKey)
+      multiSigners.forEach(signer => keys.push(signer))
+    }
+
     return this.instructionEncode(layout, {
       instruction: 7, // MintTo instruction
       amount: u64LEBuffer(amount),
-    }, [
-      { write: token },
-      { write: to },
-      mintAuthority, // TODO: support multisig
-    ])
+    }, keys)
 
     // const layout = BufferLayout.struct([
     //   BufferLayout.u8('instruction'),
@@ -353,6 +382,68 @@ export class SPLToken extends BaseProgram {
     //   data,
     // })
   }
+
+  public async approve(params: ApproveParams): Promise<void> {
+    await this.sendTx([
+      this.approveInstruction(params),
+    ], [this.wallet.account, params.approveAuthority])
+  }
+
+  private approveInstruction(params: ApproveInstructionParams): TransactionInstruction {
+    const {
+      amount,
+      account,
+      delegate,
+      approveAuthority,
+      multiSigners,
+    } = params;
+
+    const layout = BufferLayout.struct([
+      BufferLayout.u8('instruction'),
+      uint64('amount'),
+    ]);
+
+    let keys: Array<any> = [
+      { write: account },
+      delegate
+    ];
+
+    if (multiSigners.length === 0) {
+      keys.push(approveAuthority);
+    } else {
+      keys.push(approveAuthority.publicKey);
+      multiSigners.forEach(signer => keys.push(signer));
+    }
+    
+    return this.instructionEncode(layout, {
+      instruction: 4, // Approve instruction
+      amount: u64LEBuffer(amount),
+    }, keys);
+
+  }
+
+  public async revoke(params: RevokeParams): Promise<void> {
+    await this.sendTx([
+      this.revokeInstruction(params),
+    ], [this.wallet.account, params.revokeAuthority]);
+  }
+
+  private revokeInstruction(params: RevokeInstructionParams): TransactionInstruction {
+    const { account, revokeAuthority, multiSigners } = params;
+
+    const layout = BufferLayout.struct([BufferLayout.u8('instruction')]);
+
+    let keys: Array<any> = [{ write: account }];
+
+    if (multiSigners.length === 0) {
+      keys.push(revokeAuthority);
+    } else {
+      multiSigners.forEach(signer => keys.push(signer));
+    }
+
+    return this.instructionEncode(layout, { instruction: 5 }, keys);
+  }
+
 }
 
 // TODO: move these to encoding utils

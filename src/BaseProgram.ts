@@ -38,8 +38,11 @@ export abstract class BaseProgram {
     for (let inst of insts) {
       tx.add(inst)
     }
-
-    return await sendAndConfirmTransaction(this.conn, tx, signers)
+   
+    return await sendAndConfirmTransaction(this.conn, tx, signers, {
+      commitment: 'singleGossip',
+      preflightCommitment: 'singleGossip',
+    })
   }
 
   protected instructionEncode(

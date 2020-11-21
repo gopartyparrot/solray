@@ -4,11 +4,11 @@ import {
   BPF_LOADER_PROGRAM_ID,
 } from "@solana/web3.js"
 
-import { Wallet } from "./Wallet"
-export class BPFLoader {
-  static programID = BPF_LOADER_PROGRAM_ID
+import { Wallet } from './Wallet'
 
-  constructor(private wallet: Wallet, public programID = BPFLoader.programID) { }
+export class BPFLoader {
+
+  constructor(private wallet: Wallet) { }
 
   public async load(programBinary: Buffer, programAccount = new Account()): Promise<Account> {
     await BpfLoader.load(
@@ -16,9 +16,9 @@ export class BPFLoader {
       this.wallet.account,
       programAccount,
       programBinary,
-      this.programID,
-    )
+      BPF_LOADER_PROGRAM_ID,
+    );
 
-    return programAccount
+    return programAccount;
   }
 }
