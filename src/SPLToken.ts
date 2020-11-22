@@ -62,14 +62,22 @@ interface ApproveParams {
   account: PublicKey
   delegate: PublicKey
   amount: bigint
-  approveAuthority: Account | PublicKey,
-  multiSigners: Account[],
+  approveAuthority: Account | PublicKey
+  multiSigners: Account[]
 }
 
 interface RevokeParams {
   account: PublicKey
-  revokeAuthority: Account | PublicKey,
-  multiSigners: Account[],
+  revokeAuthority: Account | PublicKey
+  multiSigners: Account[]
+}
+
+interface BurnParams {
+  token: PublicKey
+  to: PublicKey
+  amount: bigint
+  burnAuthority: Account | PublicKey
+  multiSigners: Account[]
 }
 
 interface MintToInstructionParams extends MintToParams {
@@ -79,6 +87,9 @@ interface ApproveInstructionParams extends ApproveParams {
 }
 
 interface RevokeInstructionParams extends RevokeParams {
+}
+
+interface BurnInstructionParams extends BurnParams {
 }
 
 export class SPLToken extends BaseProgram {
@@ -381,6 +392,40 @@ export class SPLToken extends BaseProgram {
       revokeAuthority,
       multiSigners
     ]);
+  }
+
+  public async burn(params: BurnParams): Promise<void> {
+    const { burnAuthority, multiSigners } = params;
+
+    const signers = burnAuthority.constructor == Account ? [burnAuthority] : multiSigners
+
+    await this.sendTx([this.burnInstruction(params)], [this.account, ...signers]);
+  }
+
+  private burnInstruction(params: BurnInstructionParams): TransactionInstruction {
+    const {
+      token,
+      to,
+      amount,
+      burnAuthority,
+      multiSigners,
+    } = params;
+
+    const layout = BufferLayout.struct([
+      BufferLayout.u8('instruction'),
+      uint64('amount'),
+    ]);
+    
+    return this.instructionEncode(layout, {
+      instruction: 8, // Burn instruction
+      amount: u64LEBuffer(amount),
+    }, [
+      { write: token },
+      { write: to },
+      burnAuthority,
+      multiSigners
+    ]);
+
   }
 
 }
