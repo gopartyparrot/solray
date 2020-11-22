@@ -1,4 +1,4 @@
-import { solana, Wallet, BPFLoader } from "../..";
+import { solana, Wallet, BPFLoader } from '../..';
 
 import fs from 'fs';
 

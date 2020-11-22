@@ -1,7 +1,4 @@
-import {
-  PublicKey,
-  BaseProgram,
-} from "../..";
+import { PublicKey, BaseProgram } from '../..';
 
 interface RequestParams {
   demoKey: PublicKey;
@@ -16,7 +13,7 @@ export default class Demo extends BaseProgram {
       }),
     ], [
       // signers
-      this.account,
+      this.account, pubkey
     ]);
   }
 

@@ -1,6 +1,4 @@
-import {
-  Wallet,
-} from "./index"
+import Wallet from './Wallet';
 
 import {
   PublicKey,
@@ -13,7 +11,12 @@ export interface RentFreeAccountInstruction {
   space: number
 }
 
-export class System {
+export interface TransferInstructionParams {
+  to: PublicKey
+  amount: number
+}
+
+export default class System {
   constructor(private wallet: Wallet) {}
 
   public accountInfo(pubkey: PublicKey) {
@@ -29,6 +32,15 @@ export class System {
       lamports: balance,
       space: params.space,
       programId: params.programID,
-    })
+    });
+  }
+
+  public createTransferInstruction(params: TransferInstructionParams) {
+    const { to, amount } = params;
+    return SystemProgram.transfer({
+      fromPubkey: this.wallet.account.publicKey, 
+      toPubkey: to, 
+      lamports: amount,
+    });
   }
 }
