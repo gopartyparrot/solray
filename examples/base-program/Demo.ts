@@ -1,9 +1,6 @@
 import {
   PublicKey,
   BaseProgram,
-  ProgramAccount,
-  Wallet,
-  System,
 } from "../..";
 
 interface RequestParams {

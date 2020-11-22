@@ -1,4 +1,4 @@
-
+// @ts-ignore
 import nacl from "tweetnacl"
 
 import * as bip39 from "bip39"

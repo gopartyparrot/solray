@@ -62,13 +62,13 @@ interface ApproveParams {
   account: PublicKey
   delegate: PublicKey
   amount: bigint
-  approveAuthority: Account,
+  approveAuthority: Account | PublicKey,
   multiSigners: Account[],
 }
 
 interface RevokeParams {
   account: PublicKey
-  revokeAuthority: Account,
+  revokeAuthority: Account | PublicKey,
   multiSigners: Account[],
 }
 
@@ -215,9 +215,11 @@ export class SPLToken extends BaseProgram {
   }
 
   public async mintTo(params: MintToParams): Promise<void> {
-    await this.sendTx([
-      this.mintToInstruction(params),
-    ], [this.wallet.account, params.mintAuthority])
+    const { mintAuthority, multiSigners } = params;
+    
+    const signers = mintAuthority.constructor == Account ? [mintAuthority] : multiSigners
+
+    await this.sendTx([this.mintToInstruction(params)], [this.account, ...signers])
   }
 
   private mintToInstruction(params: MintToInstructionParams): TransactionInstruction {
@@ -234,72 +236,16 @@ export class SPLToken extends BaseProgram {
       uint64('amount'),
     ])
 
-    let keys: InstructionAuthority[] = [
-      { write: token },
-      { write: to }
-    ]
-
-    if (multiSigners.length === 0) {
-      keys.push(mintAuthority)
-    } else {
-      keys.push(mintAuthority.publicKey)
-      multiSigners.forEach(signer => keys.push(signer))
-    }
-
     return this.instructionEncode(layout, {
       instruction: 7, // MintTo instruction
       amount: u64LEBuffer(amount),
-    }, keys)
+    }, [
+      { write: token },
+      { write: to },
+      mintAuthority,
+      multiSigners
+    ]);
 
-    // const layout = BufferLayout.struct([
-    //   BufferLayout.u8('instruction'),
-    //   uint64('amount'),
-    // ]);
-
-    // const data = Buffer.alloc(layout.span);
-    // layout.encode(
-    //   {
-    //     instruction: 7, // MintTo instruction
-    //     amount: u64LEBuffer(amount),
-    //   },
-    //   data,
-    // );
-
-    // let keys = [
-    //   { pubkey: token, isSigner: false, isWritable: true },
-    //   { pubkey: to, isSigner: false, isWritable: true },
-    // ]
-
-    // keys.push({
-    //   pubkey: mintAuthority.publicKey,
-    //   isSigner: true,
-    //   isWritable: false,
-    // });
-
-    // if (authority) {
-    //   keys.push({
-    //     pubkey: authority,
-    //     isSigner: true,
-    //     isWritable: false,
-    //   });
-    // } else {
-    // FIXME: multisig
-
-    // keys.push({pubkey: authority, isSigner: false, isWritable: false});
-    // multiSigners.forEach(signer =>
-    //   keys.push({
-    //     pubkey: signer.publicKey,
-    //     isSigner: true,
-    //     isWritable: false,
-    //   }),
-    // );
-    // }
-
-    // return new TransactionInstruction({
-    //   keys,
-    //   programId: this.programID,
-    //   data,
-    // });
   }
 
   private initMintInstruction(params: InitMintInstructionParams): TransactionInstruction {
@@ -384,9 +330,11 @@ export class SPLToken extends BaseProgram {
   }
 
   public async approve(params: ApproveParams): Promise<void> {
-    await this.sendTx([
-      this.approveInstruction(params),
-    ], [this.wallet.account, params.approveAuthority])
+    const { approveAuthority, multiSigners } = params;
+    
+    const signers = approveAuthority.constructor == Account ? [approveAuthority] : multiSigners
+
+    await this.sendTx([this.approveInstruction(params)], [this.account, ...signers]);
   }
 
   private approveInstruction(params: ApproveInstructionParams): TransactionInstruction {
@@ -402,30 +350,25 @@ export class SPLToken extends BaseProgram {
       BufferLayout.u8('instruction'),
       uint64('amount'),
     ]);
-
-    let keys: InstructionAuthority[] = [
-      { write: account },
-      delegate
-    ];
-
-    if (multiSigners.length === 0) {
-      keys.push(approveAuthority);
-    } else {
-      keys.push(approveAuthority.publicKey);
-      multiSigners.forEach(signer => keys.push(signer));
-    }
     
     return this.instructionEncode(layout, {
       instruction: 4, // Approve instruction
       amount: u64LEBuffer(amount),
-    }, keys);
+    }, [
+      { write: account },
+      delegate,
+      approveAuthority,
+      multiSigners
+    ]);
 
   }
 
   public async revoke(params: RevokeParams): Promise<void> {
-    await this.sendTx([
-      this.revokeInstruction(params),
-    ], [this.wallet.account, params.revokeAuthority]);
+    const { revokeAuthority, multiSigners } = params;
+
+    const signers = revokeAuthority.constructor == Account ? [revokeAuthority] : multiSigners
+
+    await this.sendTx([this.revokeInstruction(params)], [this.account, ...signers]);
   }
 
   private revokeInstruction(params: RevokeInstructionParams): TransactionInstruction {
@@ -433,15 +376,11 @@ export class SPLToken extends BaseProgram {
 
     const layout = BufferLayout.struct([BufferLayout.u8('instruction')]);
 
-    let keys: InstructionAuthority[] = [{ write: account }];
-
-    if (multiSigners.length === 0) {
-      keys.push(revokeAuthority);
-    } else {
-      multiSigners.forEach(signer => keys.push(signer));
-    }
-
-    return this.instructionEncode(layout, { instruction: 5 }, keys);
+    return this.instructionEncode(layout, { instruction: 5 }, [
+      { write: account },
+      revokeAuthority,
+      multiSigners
+    ]);
   }
 
 }

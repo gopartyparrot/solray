@@ -30,6 +30,7 @@ export abstract class BaseProgram {
     return this.wallet.pubkey
   }
 
+
   // sendTx sends and confirm instructions in a transaction. It automatically adds
   // the wallet's account as a signer to pay for the transaction.
   protected async sendTx(insts: TransactionInstruction[], signers: Account[] = []): Promise<string> {
@@ -66,16 +67,18 @@ export abstract class BaseProgram {
   }
 }
 
-export type InstructionAuthority = Account | PublicKey | { write: PublicKey | Account }
+export type InstructionAuthority = Account | Account[] | PublicKey[] | PublicKey | { write: PublicKey | Account }
 
 function authsToKeys(auths: InstructionAuthority[]): InstructionKey[] {
   const keys: InstructionKey[] = []
 
   for (let auth of auths) {
-    if ("write" in auth) {
-      keys.push(authToKey(auth["write"], true))
+    if (auth instanceof Array) {
+      auth.forEach(a =>  keys.push(authToKey(a, false)));
     } else {
-      keys.push(authToKey(auth, false))
+      keys.push(
+        authToKey(auth['write'] || auth, !!auth['write'])
+      );
     }
   }
   return keys
