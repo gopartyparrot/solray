@@ -40,8 +40,8 @@ export abstract class BaseProgram {
     }
    
     return await sendAndConfirmTransaction(this.conn, tx, signers, {
-      commitment: 'singleGossip',
-      preflightCommitment: 'singleGossip',
+      commitment: this.conn.commitment,
+      preflightCommitment: this.conn.commitment
     })
   }
 
@@ -66,7 +66,7 @@ export abstract class BaseProgram {
   }
 }
 
-type InstructionAuthority = Account | PublicKey | { write: PublicKey | Account }
+export type InstructionAuthority = Account | PublicKey | { write: PublicKey | Account }
 
 function authsToKeys(auths: InstructionAuthority[]): InstructionKey[] {
   const keys: InstructionKey[] = []

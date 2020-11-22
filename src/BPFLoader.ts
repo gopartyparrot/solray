@@ -8,7 +8,9 @@ import { Wallet } from './Wallet'
 
 export class BPFLoader {
 
-  constructor(private wallet: Wallet) { }
+  static programID = BPF_LOADER_PROGRAM_ID
+
+  constructor(private wallet: Wallet, public programID = BPFLoader.programID) { }
 
   public async load(programBinary: Buffer, programAccount = new Account()): Promise<Account> {
     await BpfLoader.load(
@@ -16,7 +18,7 @@ export class BPFLoader {
       this.wallet.account,
       programAccount,
       programBinary,
-      BPF_LOADER_PROGRAM_ID,
+      this.programID,
     );
 
     return programAccount;

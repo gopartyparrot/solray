@@ -23,7 +23,7 @@ import {
 } from "./System"
 
 import BufferLayout from "buffer-layout"
-import { BaseProgram } from "./BaseProgram"
+import { BaseProgram, InstructionAuthority } from "./BaseProgram"
 
 interface InitMintParams {
   freezeAuthority?: PublicKey
@@ -55,7 +55,7 @@ interface MintToParams {
   to: PublicKey
   amount: bigint
   mintAuthority: Account
-  multiSigners: Array<Account>
+  multiSigners: Account[]
 }
 
 interface ApproveParams {
@@ -63,13 +63,13 @@ interface ApproveParams {
   delegate: PublicKey
   amount: bigint
   approveAuthority: Account,
-  multiSigners: Array<Account>,
+  multiSigners: Account[],
 }
 
 interface RevokeParams {
   account: PublicKey
   revokeAuthority: Account,
-  multiSigners: Array<Account>,
+  multiSigners: Account[],
 }
 
 interface MintToInstructionParams extends MintToParams {
@@ -234,7 +234,7 @@ export class SPLToken extends BaseProgram {
       uint64('amount'),
     ])
 
-    let keys: Array<any> = [
+    let keys: InstructionAuthority[] = [
       { write: token },
       { write: to }
     ]
@@ -403,7 +403,7 @@ export class SPLToken extends BaseProgram {
       uint64('amount'),
     ]);
 
-    let keys: Array<any> = [
+    let keys: InstructionAuthority[] = [
       { write: account },
       delegate
     ];
@@ -433,7 +433,7 @@ export class SPLToken extends BaseProgram {
 
     const layout = BufferLayout.struct([BufferLayout.u8('instruction')]);
 
-    let keys: Array<any> = [{ write: account }];
+    let keys: InstructionAuthority[] = [{ write: account }];
 
     if (multiSigners.length === 0) {
       keys.push(revokeAuthority);
