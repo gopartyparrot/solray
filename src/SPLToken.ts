@@ -1,27 +1,121 @@
 import { TransactionInstruction, SYSVAR_RENT_PUBKEY } from '@solana/web3.js';
 
-import {
-  MintLayout,
-  AccountLayout,
-  MintInfo,
-  AccountInfo,
-} from "@solana/spl-token"
 
-import BaseProgram from '../BaseProgram';
-import { Wallet, System, Account, PublicKey } from '..';
+import { Wallet } from './Wallet';
+import { System } from './System';
+import { Account, PublicKey } from '.';
+import { BaseProgram } from './BaseProgram';
 
-import BufferLayout from 'buffer-layout';
+import BufferLayout, { Layout } from 'buffer-layout';
 
-import {
-  InitMintParams, InitMintInstructionParams, 
-  InitAccountParams, InitAccountInstructionParams,
-  MintToParams, ApproveParams, RevokeParams,
-  BurnParams, MintToInstructionParams, ApproveInstructionParams,
-  RevokeInstructionParams, BurnInstructionParams, TransferParams,
-  TransferInstructionParams, InitWrappedNativeAccountParams,
-} from './types';
+import { uint64, u64LEBuffer, u64FromBuffer, publicKey } from './util/encoding';
 
-import { uint64, u64LEBuffer, u64FromBuffer, publicKey } from '../util/encoding';
+const MintLayout = Layout;
+const AccountLayout = Layout;
+
+export interface InitMintParams {
+  freezeAuthority?: PublicKey
+  mintAuthority: PublicKey
+  decimals: number
+
+  account?: Account
+}
+
+export interface InitMintInstructionParams extends InitMintParams {
+  token: PublicKey
+}
+
+export interface InitAccountParams {
+  token: PublicKey
+  owner: PublicKey
+  account?: Account
+}
+
+export interface InitAccountInstructionParams {
+  account: PublicKey
+  token: PublicKey
+  owner: PublicKey
+}
+
+export interface InitWrappedNativeAccountParams {
+  amount: number
+  owner: PublicKey
+  account?: Account
+}
+
+export interface MintToParams {
+  token: PublicKey
+  to: PublicKey
+  amount: bigint
+  authority: Account | PublicKey
+  multiSigners: Account[]
+}
+
+export interface ApproveParams {
+  account: PublicKey
+  delegate: PublicKey
+  amount: bigint
+  authority: Account | PublicKey
+  multiSigners: Account[]
+}
+
+export interface RevokeParams {
+  account: PublicKey
+  authority: Account | PublicKey
+  multiSigners: Account[]
+}
+
+export interface BurnParams {
+  token: PublicKey
+  from: PublicKey
+  amount: bigint
+  autority: Account | PublicKey
+  multiSigners: Account[]
+}
+
+export interface TransferParams {
+  from: PublicKey
+  to: PublicKey
+  amount: bigint
+  autority: Account | PublicKey
+  multiSigners: Account[]
+}
+
+export interface MintToInstructionParams extends MintToParams {
+}
+
+export interface ApproveInstructionParams extends ApproveParams {
+}
+
+export interface RevokeInstructionParams extends RevokeParams {
+}
+
+export interface BurnInstructionParams extends BurnParams {
+}
+
+export interface TransferInstructionParams extends TransferParams {
+}
+
+export type MintInfo = {
+  mintAuthority: null | PublicKey;
+  supply: bigint;
+  decimals: number;
+  isInitialized: boolean;
+  freezeAuthority: null | PublicKey;
+};
+
+export type AccountInfo = {
+  mint: PublicKey;
+  owner: PublicKey;
+  amount: bigint;
+  delegate: null | PublicKey;
+  delegatedAmount: bigint;
+  isInitialized: boolean;
+  isFrozen: boolean;
+  isNative: boolean;
+  rentExemptReserve: null | bigint;
+  closeAuthority: null | PublicKey;
+};
 
 /**
  * Implemented 
@@ -41,8 +135,8 @@ export const NATIVE_MINT: PublicKey = new PublicKey(
   'So11111111111111111111111111111111111111112',
 );
 
-export default class SPLToken extends BaseProgram {
-  static programID = new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
+export class SPLToken extends BaseProgram {
+  static programID = new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
 
   private sys: System
   constructor(wallet: Wallet, programID = SPLToken.programID) {

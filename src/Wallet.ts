@@ -10,9 +10,9 @@ import {
   PublicKey,
 } from '@solana/web3.js';
 
-import System from './System';
+import { System } from './System';
 
-export default class Wallet {
+export class Wallet {
   static generateMnemonic(bits = 128): string {
     return bip39.generateMnemonic(bits)
   }

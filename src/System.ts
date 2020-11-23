@@ -1,4 +1,4 @@
-import Wallet from './Wallet';
+import { Wallet } from './Wallet';
 
 import {
   PublicKey,
@@ -16,7 +16,7 @@ export interface TransferInstructionParams {
   amount: number
 }
 
-export default class System {
+export class System {
   constructor(private wallet: Wallet) {}
 
   public accountInfo(pubkey: PublicKey) {

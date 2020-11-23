@@ -7,13 +7,13 @@ import {
   Connection,
 } from "@solana/web3.js"
 
-import Wallet from './Wallet';
+import { Wallet } from '.';
 
 import BufferLayout from 'buffer-layout';
 
 // BaseProgram offers some sugar around interacting with a program. Extend this abstract
 // class with program specific instructions.
-export default abstract class BaseProgram {
+export abstract class BaseProgram {
   constructor(protected wallet: Wallet, public programID: PublicKey) { }
 
   protected get conn(): Connection {

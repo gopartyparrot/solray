@@ -13,7 +13,7 @@ export default class Demo extends BaseProgram {
       }),
     ], [
       // signers
-      this.account, pubkey
+      this.account
     ]);
   }
 

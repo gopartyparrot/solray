@@ -1,12 +1,12 @@
 import { Connection } from "@solana/web3.js"
 
 export { Account, PublicKey } from "@solana/web3.js"
-export { default as Wallet } from "./Wallet"
-export { default as SPLToken } from "./SPLToken"
-export { default as ProgramAccount } from "./ProgramAccount"
-export { default as BaseProgram } from "./BaseProgram"
-export { default as BPFLoader } from "./BPFLoader"
-export { default as System } from "./System"
+export { Wallet } from "./Wallet"
+export { SPLToken } from "./SPLToken"
+export { ProgramAccount } from "./ProgramAccount"
+export { BaseProgram } from "./BaseProgram"
+export { BPFLoader } from "./BPFLoader"
+export { System } from "./System"
 
 export type NetworkName = "local" | "dev" | "main"
 

@@ -4,9 +4,9 @@ import {
   BPF_LOADER_PROGRAM_ID,
 } from "@solana/web3.js"
 
-import Wallet from './Wallet';
+import { Wallet } from '.';
 
-export default class BPFLoader {
+export class BPFLoader {
 
   static programID = BPF_LOADER_PROGRAM_ID
 

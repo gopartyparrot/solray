@@ -10,7 +10,6 @@
     "prepack": "npm run clean && npm run build"
   },
   "dependencies": {
-    "@solana/spl-token": "^0.0.13",
     "@solana/web3.js": "^0.86.4",
     "bip32": "^2.0.6",
     "bip39": "^3.0.3",

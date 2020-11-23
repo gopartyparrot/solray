@@ -1,7 +1,7 @@
 import { PublicKey } from '@solana/web3.js';
 
 // ProgramAccount generates a pubkey that a program may use to invoke another program.
-export default class ProgramAccount {
+export class ProgramAccount {
   // NB: for simplicity, only support nonced seeds. In rust use the corresponding
   // function `Pubkey::find_program_address(&[&seed], &program_id);`
   static async forSeed(seed: Buffer, programID: PublicKey): Promise<ProgramAccount> {
