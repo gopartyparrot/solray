@@ -4,8 +4,10 @@ import {
   BPF_LOADER_PROGRAM_ID,
 } from "@solana/web3.js"
 
-import { Wallet } from "./Wallet"
+import { Wallet } from '.';
+
 export class BPFLoader {
+
   static programID = BPF_LOADER_PROGRAM_ID
 
   constructor(private wallet: Wallet, public programID = BPFLoader.programID) { }
@@ -17,8 +19,8 @@ export class BPFLoader {
       programAccount,
       programBinary,
       this.programID,
-    )
+    );
 
-    return programAccount
+    return programAccount;
   }
 }

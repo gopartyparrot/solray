@@ -1,7 +1,4 @@
-import {
-  PublicKey
-} from "@solana/web3.js"
-
+import { PublicKey } from '@solana/web3.js';
 
 // ProgramAccount generates a pubkey that a program may use to invoke another program.
 export class ProgramAccount {

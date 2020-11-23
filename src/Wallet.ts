@@ -1,18 +1,16 @@
+// @ts-ignore
+import nacl from 'tweetnacl';
 
-import nacl from "tweetnacl"
-
-import * as bip39 from "bip39"
-import * as bip32 from "bip32"
+import * as bip39 from 'bip39';
+import * as bip32 from 'bip32';
 
 import {
   Account,
   Connection,
   PublicKey,
-} from "@solana/web3.js"
+} from '@solana/web3.js';
 
-import {
-   System,
-} from "./System"
+import { System } from './System';
 
 export class Wallet {
   static generateMnemonic(bits = 128): string {
@@ -24,9 +22,8 @@ export class Wallet {
       throw new Error('Invalid seed words');
     }
 
-
     const seed = await bip39.mnemonicToSeed(mnemonic);
-    return Wallet.fromSeed(seed, conn)
+    return Wallet.fromSeed(seed, conn);
   }
 
   static fromSeed(seed: Buffer, conn: Connection): Wallet {

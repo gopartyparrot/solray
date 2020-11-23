@@ -1,31 +1,19 @@
-import {
-  PublicKey,
-  Account,
-  Transaction,
-  TransactionInstruction,
-  SYSVAR_RENT_PUBKEY,
-  sendAndConfirmTransaction,
-} from "@solana/web3.js"
+import { TransactionInstruction, SYSVAR_RENT_PUBKEY } from '@solana/web3.js';
 
-import {
-  MintLayout,
-  AccountLayout,
-  MintInfo,
-  AccountInfo,
-} from "@solana/spl-token"
 
-import {
-  Wallet,
-} from "./index"
+import { Wallet } from './Wallet';
+import { System } from './System';
+import { Account, PublicKey } from '.';
+import { BaseProgram } from './BaseProgram';
 
-import {
-  System
-} from "./System"
+import BufferLayout, { Layout } from 'buffer-layout';
 
-import BufferLayout from "buffer-layout"
-import { BaseProgram } from "./BaseProgram"
+import { uint64, u64LEBuffer, u64FromBuffer, publicKey } from './util/encoding';
 
-interface InitMintParams {
+const MintLayout = Layout;
+const AccountLayout = Layout;
+
+export interface InitMintParams {
   freezeAuthority?: PublicKey
   mintAuthority: PublicKey
   decimals: number
@@ -33,36 +21,122 @@ interface InitMintParams {
   account?: Account
 }
 
-interface InitMintInstructionParams extends InitMintParams {
+export interface InitMintInstructionParams extends InitMintParams {
   token: PublicKey
 }
 
-interface InitAccountParams {
+export interface InitAccountParams {
   token: PublicKey
   owner: PublicKey
-
   account?: Account
 }
 
-interface InitAccountInstructionParams {
+export interface InitAccountInstructionParams {
   account: PublicKey
   token: PublicKey
   owner: PublicKey
 }
 
-interface MintToParams {
+export interface InitWrappedNativeAccountParams {
+  amount: number
+  owner: PublicKey
+  account?: Account
+}
+
+export interface MintToParams {
   token: PublicKey
   to: PublicKey
   amount: bigint
-
-  mintAuthority: Account
+  authority: Account | PublicKey
+  multiSigners: Account[]
 }
 
-interface MintToInstructionParams extends MintToParams {
+export interface ApproveParams {
+  account: PublicKey
+  delegate: PublicKey
+  amount: bigint
+  authority: Account | PublicKey
+  multiSigners: Account[]
 }
+
+export interface RevokeParams {
+  account: PublicKey
+  authority: Account | PublicKey
+  multiSigners: Account[]
+}
+
+export interface BurnParams {
+  token: PublicKey
+  from: PublicKey
+  amount: bigint
+  autority: Account | PublicKey
+  multiSigners: Account[]
+}
+
+export interface TransferParams {
+  from: PublicKey
+  to: PublicKey
+  amount: bigint
+  autority: Account | PublicKey
+  multiSigners: Account[]
+}
+
+export interface MintToInstructionParams extends MintToParams {
+}
+
+export interface ApproveInstructionParams extends ApproveParams {
+}
+
+export interface RevokeInstructionParams extends RevokeParams {
+}
+
+export interface BurnInstructionParams extends BurnParams {
+}
+
+export interface TransferInstructionParams extends TransferParams {
+}
+
+export type MintInfo = {
+  mintAuthority: null | PublicKey;
+  supply: bigint;
+  decimals: number;
+  isInitialized: boolean;
+  freezeAuthority: null | PublicKey;
+};
+
+export type AccountInfo = {
+  mint: PublicKey;
+  owner: PublicKey;
+  amount: bigint;
+  delegate: null | PublicKey;
+  delegatedAmount: bigint;
+  isInitialized: boolean;
+  isFrozen: boolean;
+  isNative: boolean;
+  rentExemptReserve: null | bigint;
+  closeAuthority: null | PublicKey;
+};
+
+/**
+ * Implemented 
+ * 
+ * `mintInfo`, `accountInfo`, `initializeMint(createMint)`, 
+ * `initializeAccount(createAccount)`, `initializeWrappedNativeAccount`, `mintTo`,
+ * `approve`, `revoke`, `burn`, `transfer`
+ * 
+ * TODO
+ * 
+ * `getMultisigInfo`, `setAuthority`, `closeAccount`, `freezeAccount`, `thawAccount`
+ * `transfer2`, `approve2`, `revoke2`, `burn2`, `mintTo2`
+ */
+
+ // The address of the special mint for wrapped native token.
+export const NATIVE_MINT: PublicKey = new PublicKey(
+  'So11111111111111111111111111111111111111112',
+);
 
 export class SPLToken extends BaseProgram {
-  static programID = new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
+  static programID = new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
 
   private sys: System
   constructor(wallet: Wallet, programID = SPLToken.programID) {
@@ -70,6 +144,11 @@ export class SPLToken extends BaseProgram {
     this.sys = new System(this.wallet)
   }
 
+  /**
+   * Retrieve mint information
+   * 
+   * @param token Public key of the token
+   */
   public async mintInfo(token: PublicKey): Promise<MintInfo> {
     const info = await this.wallet.conn.getAccountInfo(token);
     if (info === null) {
@@ -102,6 +181,11 @@ export class SPLToken extends BaseProgram {
     return mintInfo;
   }
 
+  /**
+   * Retrieve account information
+   *
+   * @param account Public key of the account
+   */
   public async accountInfo(account: PublicKey): Promise<AccountInfo> {
     const info = await this.conn.getAccountInfo(account);
     if (info === null) {
@@ -145,18 +229,17 @@ export class SPLToken extends BaseProgram {
       accountInfo.closeAuthority = new PublicKey(accountInfo.closeAuthority);
     }
 
-    // if (!accountInfo.mint.equals(this.publicKey)) {
-    //   throw new Error(
-    //     `Invalid account mint: ${JSON.stringify(
-    //       accountInfo.mint,
-    //     )} !== ${JSON.stringify(this.publicKey)}`,
-    //   );
-    // }
-
     return accountInfo;
   }
 
-  // initializeMint creates a new token with zero supply
+  /**
+   * Creates a new token with zero supply
+   *
+   * @param mintAuthority Account or multisig that will control minting
+   * @param freezeAuthority Optional account or multisig that can freeze token accounts
+   * @param decimals Location of the decimal place
+   * @return Token object for the newly minted token
+   */
   public async initializeMint(params: InitMintParams): Promise<Account> {
     const account = params.account || new Account()
 
@@ -175,9 +258,41 @@ export class SPLToken extends BaseProgram {
     return account
   }
 
-  // initializeAccount creates an account to hold token balance
+  private initMintInstruction(params: InitMintInstructionParams): TransactionInstruction {
+    const layout = BufferLayout.struct([
+      BufferLayout.u8('instruction'),
+      BufferLayout.u8('decimals'),
+      publicKey('mintAuthority'),
+      BufferLayout.u8('option'),
+      publicKey('freezeAuthority'),
+    ]);
+
+    const { token, decimals, mintAuthority, freezeAuthority } = params;
+
+    return this.instructionEncode(layout, {
+      instruction: 0, // InitializeMint instruction
+      decimals,
+      mintAuthority: mintAuthority.toBuffer(),
+      option: !freezeAuthority ? 0 : 1,
+      freezeAuthority: (freezeAuthority || new PublicKey(0)).toBuffer(),
+    }, [
+      { write: token },
+      SYSVAR_RENT_PUBKEY,
+    ]);
+  }
+
+  /**
+   * Creates an account to hold token balance
+   *
+   * This account may then be used as a `transfer()` or `approve()` destination
+   *
+   * @param owner User account that will own the new account
+   * @return Public key of the new empty account
+   */
+ 
   public async initializeAccount(params: InitAccountParams): Promise<Account> {
-    const account = params.account || new Account()
+    const account = params.account || new Account();
+
     await this.sendTx([
       await this.sys.createRentFreeAccountInstruction({
         newPubicKey: account.publicKey,
@@ -189,15 +304,72 @@ export class SPLToken extends BaseProgram {
         token: params.token,
         owner: params.owner,
       })
-    ], [this.account, account])
+    ], [this.account, account]);
 
-    return account
+    return account;
   }
 
-  public async mintTo(params: MintToParams): Promise<void> {
+  private initAccountInstruction(params: InitAccountInstructionParams): TransactionInstruction {
+    const layout = BufferLayout.struct([BufferLayout.u8('instruction')]);
+
+    return this.instructionEncode(layout, { instruction: 1 }, [
+      { write: params.account },
+      params.token,
+      params.owner,
+      SYSVAR_RENT_PUBKEY,
+    ]);
+  }
+
+  /**
+   * Create and initialize a new account on the special native token mint.
+   *
+   * In order to be wrapped, the account must have a balance of native tokens
+   * when it is initialized with the token program.
+   *
+   * This function sends lamports to the new account before initializing it.
+   *
+   * @param onwer The owner of the new token account
+   * @param amount The amount of lamports to wrap
+   * @return {Promise<PublicKey>} The new token account
+   */
+  public async initializeWrappedNativeAccount(params: InitWrappedNativeAccountParams): Promise<Account> {
+    const account = params.account || new Account();
+
     await this.sendTx([
-      this.mintToInstruction(params),
-    ], [this.wallet.account, params.mintAuthority])
+      await this.sys.createRentFreeAccountInstruction({
+        newPubicKey: account.publicKey,
+        programID: this.programID,
+        space: AccountLayout.span
+      }),
+      this.sys.createTransferInstruction({
+        to: account.publicKey,
+        amount: params.amount,
+      }),
+      this.initAccountInstruction({
+        account: account.publicKey,
+        token: NATIVE_MINT,
+        owner: params.owner,
+      })
+    ], [this.account, account]);
+    
+    return account;
+  }
+
+  /**
+   * Mint new tokens
+   *
+   * @param amount Amount to mint
+   * @param token To mint token
+   * @param to Public key of the account to mint to
+   * @param authority Minting authority
+   * @param multiSigners Signing accounts if `authority` is a multiSig
+   */
+  public async mintTo(params: MintToParams): Promise<void> {
+    const { authority, multiSigners } = params;
+    
+    const signers = authority.constructor == Account ? [authority] : multiSigners
+
+    await this.sendTx([this.mintToInstruction(params)], [this.account, ...signers])
   }
 
   private mintToInstruction(params: MintToInstructionParams): TransactionInstruction {
@@ -205,7 +377,8 @@ export class SPLToken extends BaseProgram {
       amount,
       token,
       to,
-      mintAuthority,
+      authority,
+      multiSigners,
     } = params
 
     const layout = BufferLayout.struct([
@@ -219,164 +392,166 @@ export class SPLToken extends BaseProgram {
     }, [
       { write: token },
       { write: to },
-      mintAuthority, // TODO: support multisig
-    ])
+      authority,
+      multiSigners
+    ]);
 
-    // const layout = BufferLayout.struct([
-    //   BufferLayout.u8('instruction'),
-    //   uint64('amount'),
-    // ]);
-
-    // const data = Buffer.alloc(layout.span);
-    // layout.encode(
-    //   {
-    //     instruction: 7, // MintTo instruction
-    //     amount: u64LEBuffer(amount),
-    //   },
-    //   data,
-    // );
-
-    // let keys = [
-    //   { pubkey: token, isSigner: false, isWritable: true },
-    //   { pubkey: to, isSigner: false, isWritable: true },
-    // ]
-
-    // keys.push({
-    //   pubkey: mintAuthority.publicKey,
-    //   isSigner: true,
-    //   isWritable: false,
-    // });
-
-    // if (authority) {
-    //   keys.push({
-    //     pubkey: authority,
-    //     isSigner: true,
-    //     isWritable: false,
-    //   });
-    // } else {
-    // FIXME: multisig
-
-    // keys.push({pubkey: authority, isSigner: false, isWritable: false});
-    // multiSigners.forEach(signer =>
-    //   keys.push({
-    //     pubkey: signer.publicKey,
-    //     isSigner: true,
-    //     isWritable: false,
-    //   }),
-    // );
-    // }
-
-    // return new TransactionInstruction({
-    //   keys,
-    //   programId: this.programID,
-    //   data,
-    // });
   }
 
-  private initMintInstruction(params: InitMintInstructionParams): TransactionInstruction {
+  /**
+   * Construct an Approve instruction
+   *
+   * @param amount Maximum number of tokens the delegate may transfer
+   * @param account Public key of the account
+   * @param delegate Account authorized to perform a transfer of tokens from the source account
+   * @param authority Owner of the source account
+   * @param multiSigners Signing accounts if `owner` is a multiSig
+   */
+  public async approve(params: ApproveParams): Promise<void> {
+    const { authority, multiSigners } = params;
+    
+    const signers = authority.constructor == Account ? [authority] : multiSigners
+
+    await this.sendTx([this.approveInstruction(params)], [this.account, ...signers]);
+  }
+
+  private approveInstruction(params: ApproveInstructionParams): TransactionInstruction {
+    const {
+      amount,
+      account,
+      delegate,
+      authority,
+      multiSigners,
+    } = params;
+
     const layout = BufferLayout.struct([
       BufferLayout.u8('instruction'),
-      BufferLayout.u8('decimals'),
-      publicKey('mintAuthority'),
-      BufferLayout.u8('option'),
-      publicKey('freezeAuthority'),
-    ])
-
+      uint64('amount'),
+    ]);
+    
     return this.instructionEncode(layout, {
-      instruction: 0, // InitializeMint instruction
-      decimals: params.decimals,
-      mintAuthority: params.mintAuthority.toBuffer(),
-      option: !params.freezeAuthority ? 0 : 1,
-      freezeAuthority: (params.freezeAuthority || new PublicKey(0)).toBuffer(),
+      instruction: 4, // Approve instruction
+      amount: u64LEBuffer(amount),
     }, [
-      { write: params.token },
-      SYSVAR_RENT_PUBKEY,
-    ])
+      { write: account },
+      delegate,
+      authority,
+      multiSigners
+    ]);
 
-    // const keys = [
-    //   { pubkey: params.token, isSigner: false, isWritable: true },
-    //   { pubkey: SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false },
-    // ];
-
-    // let data = Buffer.alloc(1024);
-
-    // {
-    //   const encodeLength = layout.encode(
-    //     {
-    //       instruction: 0, // InitializeMint instruction
-    //       decimals: params.decimals,
-    //       mintAuthority: params.mintAuthority.toBuffer(),
-    //       option: !params.freezeAuthority ? 0 : 1,
-    //       freezeAuthority: (params.freezeAuthority || new PublicKey(0)).toBuffer(),
-    //     },
-    //     data,
-    //   );
-    //   data = data.slice(0, encodeLength);
-    // }
-
-    // return new TransactionInstruction({
-    //   keys,
-    //   programId: this.programID,
-    //   data,
-    // });
   }
 
-  private initAccountInstruction(params: InitAccountInstructionParams): TransactionInstruction {
+  /**
+   * Remove approval for the transfer of any remaining tokens
+   *
+   * @param account Public key of the account
+   * @param authority Owner of the source account
+   * @param multiSigners Signing accounts if `owner` is a multiSig
+   */
+  public async revoke(params: RevokeParams): Promise<void> {
+    const { authority, multiSigners } = params;
+
+    const signers = authority.constructor == Account ? [authority] : multiSigners
+
+    await this.sendTx([this.revokeInstruction(params)], [this.account, ...signers]);
+  }
+
+  private revokeInstruction(params: RevokeInstructionParams): TransactionInstruction {
+    const { account, authority, multiSigners } = params;
+
     const layout = BufferLayout.struct([BufferLayout.u8('instruction')]);
 
-    return this.instructionEncode(layout, { instruction: 1 }, [
-      { write: params.account },
-      params.token,
-      params.owner,
-      SYSVAR_RENT_PUBKEY,
-    ])
-
-    // const keys = [
-    //   { pubkey: params.account, isSigner: false, isWritable: true },
-    //   { pubkey: params.token, isSigner: false, isWritable: false },
-    //   { pubkey: params.owner, isSigner: false, isWritable: false },
-    //   { pubkey: SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false },
-    // ]
-
-
-    // const data = Buffer.alloc(dataLayout.span);
-    // dataLayout.encode(
-    //   {
-    //     instruction: 1, // InitializeAccount instruction
-    //   },
-    //   data,
-    // )
-
-    // return new TransactionInstruction({
-    //   keys,
-    //   programId: this.programID,
-    //   data,
-    // })
+    return this.instructionEncode(layout, { instruction: 5 }, [
+      { write: account },
+      authority,
+      multiSigners
+    ]);
   }
-}
 
-// TODO: move these to encoding utils
+  /**
+   * Burn tokens
+   *
+   * @param token The token pubkey
+   * @param from  Burn from account
+   * @param amount Amount to burn
+   * @param authority Account owner
+   * @param multiSigners Signing accounts if `owner` is a multiSig
+   */
+  public async burn(params: BurnParams): Promise<void> {
+    const { autority, multiSigners } = params;
 
-/**
- * Layout for a public key
- */
-export const publicKey = (property: string): Object => {
-  return BufferLayout.blob(32, property);
-}
+    const signers = autority.constructor == Account ? [autority] : multiSigners
 
-// /**
-//  * Layout for a 64bit unsigned value
-//  */
-export const uint64 = (property: string = 'uint64'): Object => {
-  return BufferLayout.blob(8, property);
-}
+    await this.sendTx([this.burnInstruction(params)], [this.account, ...signers]);
+  }
 
-export function u64FromBuffer(buf: Buffer): bigint {
-  return buf.readBigUInt64LE()
-}
+  private burnInstruction(params: BurnInstructionParams): TransactionInstruction {
+    const {
+      token,
+      from,
+      amount,
+      autority,
+      multiSigners,
+    } = params;
 
-export function u64LEBuffer(n: bigint): Buffer {
-  const buf = Buffer.allocUnsafe(8)
-  buf.writeBigUInt64LE(n)
-  return buf
+    const layout = BufferLayout.struct([
+      BufferLayout.u8('instruction'),
+      uint64('amount'),
+    ]);
+    
+    return this.instructionEncode(layout, {
+      instruction: 8, // Burn instruction
+      amount: u64LEBuffer(amount),
+    }, [
+      { write: from },
+      { write: token },
+      autority,
+      multiSigners
+    ]);
+
+  }
+
+  /**
+   * Transfer tokens to another account
+   *
+   * @param from Source account
+   * @param to Destination account
+   * @param amount Number of tokens to transfer
+   * @param autority Owner of the source account
+   * @param multiSigners Signing accounts if `owner` is a multiSig
+   */
+  public async transfer(params: TransferParams): Promise<void> {
+    const { autority, multiSigners } = params;
+
+    const signers = autority.constructor == Account ? [autority] : multiSigners
+
+    await this.sendTx([this.transferInstruction(params)], [this.account, ...signers]);
+  }
+
+  private transferInstruction(params: TransferInstructionParams): TransactionInstruction{
+    const {
+      from,
+      to,
+      amount,
+      autority,
+      multiSigners,
+    } = params;
+    
+    const layout = BufferLayout.struct([
+      BufferLayout.u8('instruction'),
+      uint64('amount'),
+    ]);
+
+    return this.instructionEncode(layout, {
+      instruction: 3, // Transfer instruction
+      amount: u64LEBuffer(amount),
+    }, [
+      { write: from },
+      { write: to },
+      autority,
+      multiSigners
+    ]);
+
+  }
+
 }
