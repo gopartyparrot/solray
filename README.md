@@ -1,4 +1,4 @@
-# soldo
+# solray
 
 DApp Toolkit for Solana.
 
@@ -94,7 +94,7 @@ import {
   BaseProgram,
   ProgramAccount,
   SPLToken,
-} from "soldo"
+} from "solray"
 
 interface RequestParams {
   receiver: PublicKey
