@@ -2,18 +2,23 @@
   "name": "solray",
   "version": "0.0.1",
   "main": "./lib/index.js",
+  "testnetDefaultChannel": "v1.4.9",
+  "bin": {
+    "solray": "./lib/bin/solray.js"
+  },
   "license": "MIT",
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
     "clean": "rm -r lib",
-    "prepack": "npm run clean && npm run build"
+    "prepack": "npm run clean && npm run build && cp ./src/bin/*.sh ./lib/bin/"
   },
   "dependencies": {
     "@solana/web3.js": "^0.86.4",
     "bip32": "^2.0.6",
     "bip39": "^3.0.3",
     "bs58": "^4.0.1",
+    "commander": "^6.2.0",
     "tweetnacl": "^1.0.3"
   },
   "devDependencies": {
