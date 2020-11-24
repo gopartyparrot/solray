@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import fetch from 'node-fetch';
 
 import { exec as execute } from 'child_process';
 
@@ -21,13 +22,13 @@ function exec(cmd: string) {
 // paths
 const cwd = process.cwd();
 const binDir = __dirname;
-const rootDir = path.resolve(binDir, '../../');
-const web3Dir = path.join(rootDir, '/node_modules/@solana/web3.js');
-const bpfSdkDir = path.join(web3Dir, '/bpf-sdk');
+
+const web3Dir = path.resolve(require.resolve('@solana/web3.js'), "../..");
+const bpfSDKDir = path.join(web3Dir, '/bpf-sdk');
 
 // shells
-const sdkInstaller = path.join(binDir, '/bpf-sdk-install.sh');
-const programBuilder = path.join(bpfSdkDir, 'rust/build.sh');
+const sdkInstaller = path.join(binDir, '../../bpf-sdk-install.sh');
+const programBuilder = path.join(bpfSDKDir, 'rust/build.sh');
 
 // The Cargo.tomal package name may not equals the program name,
 // so we so we need to compatible this.
@@ -55,7 +56,7 @@ async function runBuild(program: string, toPath: string): Promise<void> {
   }
 
   await exec(programBuilder + ' ' + program);
- 
+
   const soFilePath = getSoFilePath(program, profilePath);
 
   const soFileName = program + '.so';
@@ -76,25 +77,17 @@ async function runBuild(program: string, toPath: string): Promise<void> {
   console.log('Program built to:', outputFilePath);
 }
 
-async function ensureLatestBuildSDK(): Promise<void> {
-  if (fs.existsSync(bpfSdkDir)) {
-    const sdkVersionFile = path.join(bpfSdkDir, 'version.txt');
-    const sdkVersionData = fs.readFileSync(sdkVersionFile, 'utf-8');
-    const pkgJSONData = fs.readFileSync(path.join(rootDir, 'package.json'), 'utf-8');
-
-    const pkgJSON = JSON.parse(pkgJSONData) || {};
-    
-    let checked = pkgJSON.testnetDefaultChannel == 'v' + (/^(.*)\s/.exec(sdkVersionData) || [])[1];
-    if (checked) {
-      return;
-    }
-    console.log('SDK version not match, download the new version.');
-    fs.rmdirSync(bpfSdkDir, { recursive: true });
+async function ensureBPFSDK(): Promise<void> {
+  if (fs.existsSync(bpfSDKDir)) {
+    return;
   }
-  await exec(sdkInstaller + ' ' + web3Dir);
+
+  const channel = 'edge';
+
+  await exec(`${sdkInstaller} ${web3Dir} ${channel}`);
 }
 
 export async function build(program: string, toPath: string): Promise<void> {
-  await ensureLatestBuildSDK();
+  await ensureBPFSDK();
   await runBuild(program, toPath);
 }

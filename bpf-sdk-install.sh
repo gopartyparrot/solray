@@ -2,26 +2,10 @@
 set -e
 
 installDir=$1
+channel=$2
+
 if [[ -z $installDir ]]; then
   installDir="$(cd "$(dirname "$0")"/..; pwd)"
-fi
-
-channel=$(
-  cd "$(dirname "$0")";
-  node -p '
-    let p = [
-      "../../package.json",
-      "../lib/node_modules/@solana/web3.js/package.json",
-      "../@solana/web3.js/package.json",
-      "../package.json"
-    ].find(require("fs").existsSync);
-    if (!p) throw new Error("Unable to locate package.json");
-    require(p)["testnetDefaultChannel"]
-  '
-)
-
-if [[ -n $2 ]]; then
-  channel=$2
 fi
 
 echo "Installing $channel BPF SDK into $installDir"
