@@ -71,7 +71,7 @@ export interface MintToParams {
   to: PublicKey
   amount: bigint
   authority: Account | PublicKey
-  multiSigners: Account[]
+  multiSigners?: Account[]
 }
 
 export interface ApproveParams {
@@ -301,7 +301,7 @@ export class SPLToken extends BaseProgram {
 
   /**
    * Retrieve mint information
-   * 
+   *
    * @param token Public key of the token
    */
   public async mintInfo(token: PublicKey): Promise<MintInfo> {
@@ -478,7 +478,7 @@ export class SPLToken extends BaseProgram {
    * @param owner User account that will own the new account
    * @return Public key of the new empty account
    */
- 
+
   public async initializeAccount(params: InitAccountParams): Promise<Account> {
     const account = params.account || new Account();
 
@@ -540,7 +540,7 @@ export class SPLToken extends BaseProgram {
         owner: params.owner,
       })
     ], [this.account, account]);
-    
+
     return account;
   }
 
@@ -555,8 +555,8 @@ export class SPLToken extends BaseProgram {
    */
   public async mintTo(params: MintToParams): Promise<void> {
     const { authority, multiSigners } = params;
-    
-    const signers = authority.constructor == Account ? [authority] : multiSigners
+
+    const signers = authority.constructor == Account ? [authority] : (multiSigners || [])
 
     await this.sendTx([this.mintToInstruction(params)], [this.account, ...signers])
   }
@@ -582,7 +582,7 @@ export class SPLToken extends BaseProgram {
       { write: token },
       { write: to },
       authority,
-      multiSigners
+        multiSigners || [],
     ]);
 
   }
@@ -598,7 +598,7 @@ export class SPLToken extends BaseProgram {
    */
   public async approve(params: ApproveParams): Promise<void> {
     const { authority, multiSigners } = params;
-    
+
     const signers = authority.constructor == Account ? [authority] : multiSigners
 
     await this.sendTx([this.approveInstruction(params)], [this.account, ...signers]);
@@ -617,7 +617,7 @@ export class SPLToken extends BaseProgram {
       BufferLayout.u8('instruction'),
       uint64('amount'),
     ]);
-    
+
     return this.instructionEncode(layout, {
       instruction: 4, // Approve instruction
       amount: u64LEBuffer(amount),
@@ -687,7 +687,7 @@ export class SPLToken extends BaseProgram {
       BufferLayout.u8('instruction'),
       uint64('amount'),
     ]);
-    
+
     return this.instructionEncode(layout, {
       instruction: 8, // Burn instruction
       amount: u64LEBuffer(amount),
@@ -725,7 +725,7 @@ export class SPLToken extends BaseProgram {
       authority,
       multiSigners,
     } = params;
-    
+
     const layout = BufferLayout.struct([
       BufferLayout.u8('instruction'),
       uint64('amount'),
@@ -768,7 +768,7 @@ export class SPLToken extends BaseProgram {
       currentAuthority,
       multiSigners,
     } = params;
-    
+
     const layout = BufferLayout.struct([
       BufferLayout.u8('instruction'),
       BufferLayout.u8('authorityType'),
@@ -812,7 +812,7 @@ export class SPLToken extends BaseProgram {
       authority,
       multiSigners,
     } = params;
-    
+
     const layout = BufferLayout.struct([
       BufferLayout.u8('instruction'),
     ]);
@@ -830,7 +830,7 @@ export class SPLToken extends BaseProgram {
 
   /**
    * Freeze account
-   * 
+   *
    * @param token The token public key
    * @param account Account to freeze
    * @param authority The mint freeze authority
@@ -851,7 +851,7 @@ export class SPLToken extends BaseProgram {
       authority,
       multiSigners,
     } = params;
-    
+
     const layout = BufferLayout.struct([
       BufferLayout.u8('instruction'),
     ]);
@@ -888,7 +888,7 @@ export class SPLToken extends BaseProgram {
       authority,
       multiSigners,
     } = params;
-    
+
     const layout = BufferLayout.struct([
       BufferLayout.u8('instruction'),
     ]);
@@ -932,7 +932,7 @@ export class SPLToken extends BaseProgram {
       authority,
       multiSigners,
     } = params;
-    
+
     const layout = BufferLayout.struct([
       BufferLayout.u8('instruction'),
       uint64('amount'),
@@ -952,10 +952,10 @@ export class SPLToken extends BaseProgram {
     ]);
 
   }
-  
+
   /**
    * Construct an Approve instruction
-   * 
+   *
    * @param token The token public key
    * @param amount Maximum number of tokens the delegate may transfer
    * @param account Public key of the account
@@ -966,7 +966,7 @@ export class SPLToken extends BaseProgram {
    */
   public async approve2(params: Approve2Params): Promise<void> {
     const { authority, multiSigners } = params;
-    
+
     const signers = authority.constructor == Account ? [authority] : multiSigners
 
     await this.sendTx([this.approve2Instruction(params)], [this.account, ...signers]);
@@ -988,7 +988,7 @@ export class SPLToken extends BaseProgram {
       uint64('amount'),
       BufferLayout.u8('decimals'),
     ]);
-    
+
     return this.instructionEncode(layout, {
       instruction: 13, // Approve instruction
       amount: u64LEBuffer(amount),
@@ -1015,7 +1015,7 @@ export class SPLToken extends BaseProgram {
    */
   public async mintTo2(params: MintTo2Params): Promise<void> {
     const { authority, multiSigners } = params;
-    
+
     const signers = authority.constructor == Account ? [authority] : multiSigners
 
     await this.sendTx([this.mintTo2Instruction(params)], [this.account, ...signers])
