@@ -7,6 +7,7 @@ export { ProgramAccount } from "./ProgramAccount"
 export { BaseProgram } from "./BaseProgram"
 export { BPFLoader } from "./BPFLoader"
 export { System } from "./System"
+export { Deployer } from "./Deployer"
 
 export type NetworkName = "local" | "dev" | "main"
 
