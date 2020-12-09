@@ -37,7 +37,7 @@ export abstract class BaseProgram {
     for (let inst of insts) {
       tx.add(inst)
     }
-   
+
     return await sendAndConfirmTransaction(this.conn, tx, signers, {
       commitment: this.conn.commitment,
       preflightCommitment: this.conn.commitment
@@ -83,15 +83,17 @@ function authsToKeys(auths: InstructionAuthority[]): InstructionKey[] {
 }
 
 function authToKey(auth: Account | PublicKey, isWritable = false): InstructionKey {
-  if (auth.constructor == Account) {
+  // FIXME: @solana/web3.js and solray may import different versions of PublicKey, causing
+  // the typecheck here to fail. Let's just compare constructor name for now -.-
+  if (auth.constructor.name == Account.name) {
     return {
-      pubkey: auth.publicKey,
+      pubkey: (auth as Account).publicKey,
       isSigner: true,
       isWritable,
     }
-  } else if (auth.constructor == PublicKey) {
+  } else if (auth.constructor.name == PublicKey.name) {
     return {
-      pubkey: auth,
+      pubkey: (auth as PublicKey),
       isSigner: false,
       isWritable,
     }

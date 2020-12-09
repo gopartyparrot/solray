@@ -1,5 +1,7 @@
 import BufferLayout from "buffer-layout"
 
+// export let BufferLayout = BufferLayout
+
 /**
  * Layout for a public key
  */
@@ -23,3 +25,5 @@ export function u64LEBuffer(n: bigint): Buffer {
   buf.writeBigUInt64LE(n)
   return buf
 }
+
+export * as BufferLayout from "buffer-layout"
