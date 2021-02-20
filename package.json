@@ -14,7 +14,7 @@
     "prepack": "npm install && npm run clean && npm run build"
   },
   "dependencies": {
-    "@solana/web3.js": "^0.86.4",
+    "@solana/web3.js": "^0.91.3",
     "bip32": "^2.0.6",
     "bip39": "^3.0.3",
     "bs58": "^4.0.1",
