@@ -9,8 +9,6 @@ export { BPFLoader } from "./BPFLoader";
 export { System } from "./System";
 export { Deployer } from "./Deployer";
 
-export type NetworkName = "local" | "dev" | "main";
-
 export interface IConnectOptions {
   commitment?: string;
   rpcHost?: string;
@@ -18,13 +16,17 @@ export interface IConnectOptions {
 
 const defaultRPCHosts = {
   local: "http://localhost:8899",
+
   dev: "https://devnet.solana.com",
+  devnet: "https://devnet.solana.com",
+
   main: "https://api.mainnet-beta.solana.com",
+  mainnet: "https://api.mainnet-beta.solana.com",
 };
 
 export namespace solana {
   export function connect(
-    networkName: NetworkName,
+    networkName: string,
     opts: IConnectOptions = {},
   ): Connection {
     const commitment = opts.commitment || "singleGossip";
