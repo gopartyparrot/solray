@@ -8,8 +8,10 @@ export { BPFLoader } from "./BPFLoader";
 export { System } from "./System";
 export { Deployer } from "./Deployer";
 export declare type NetworkName = "local" | "dev" | "main";
+export interface IConnectOptions {
+    commitment?: string;
+    rpcHost?: string;
+}
 export declare namespace solana {
-    function connect(networkName: NetworkName, opts?: {
-        commitment?: string;
-    }): Connection;
+    function connect(networkName: NetworkName, opts?: IConnectOptions): Connection;
 }

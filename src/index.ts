@@ -1,27 +1,40 @@
-import { Connection } from "@solana/web3.js"
+import { Connection } from "@solana/web3.js";
 
-export { Account, PublicKey } from "@solana/web3.js"
-export { Wallet } from "./Wallet"
-export { SPLToken } from "./SPLToken"
-export { ProgramAccount } from "./ProgramAccount"
-export { BaseProgram } from "./BaseProgram"
-export { BPFLoader } from "./BPFLoader"
-export { System } from "./System"
-export { Deployer } from "./Deployer"
+export { Account, PublicKey } from "@solana/web3.js";
+export { Wallet } from "./Wallet";
+export { SPLToken } from "./SPLToken";
+export { ProgramAccount } from "./ProgramAccount";
+export { BaseProgram } from "./BaseProgram";
+export { BPFLoader } from "./BPFLoader";
+export { System } from "./System";
+export { Deployer } from "./Deployer";
 
-export type NetworkName = "local" | "dev" | "main"
+export type NetworkName = "local" | "dev" | "main";
+
+export interface IConnectOptions {
+  commitment?: string;
+  rpcHost?: string;
+}
+
+const defaultRPCHosts = {
+  local: "http://localhost:8899",
+  dev: "https://devnet.solana.com",
+  main: "https://api.mainnet-beta.solana.com",
+};
 
 export namespace solana {
-  export function connect(networkName: NetworkName, opts: { commitment?: string } = {}): Connection {
-    const commitment = opts.commitment || "singleGossip"
+  export function connect(
+    networkName: NetworkName,
+    opts: IConnectOptions = {},
+  ): Connection {
+    const commitment = opts.commitment || "singleGossip";
 
-    switch (networkName) {
-      case "local":
-        return new Connection("http://localhost:8899", commitment as any)
-      case "dev":
-        return new Connection("https://devnet.solana.com", commitment as any)
-      default:
-        throw new Error(`Unknown network to connect to: ${networkName}`)
+    const rpcHost = opts.rpcHost || defaultRPCHosts[networkName];
+
+    if (!rpcHost) {
+      throw new Error(`Cannot find RPC Host to connect to: ${networkName}`);
     }
+
+    return new Connection(rpcHost, commitment as any);
   }
 }
