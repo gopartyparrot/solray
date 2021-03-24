@@ -7,6 +7,7 @@ import * as bip32 from "bip32";
 import { Account, Connection, PublicKey } from "@solana/web3.js";
 
 import { System } from "./System";
+import { BPFLoader } from "./BPFLoader";
 
 function pathToAccount(path: bip32.BIP32Interface): Account {
   return new Account(
@@ -67,6 +68,11 @@ export class Wallet {
     return this.account.publicKey;
   }
 
+  public deriveIndex(index: number): Wallet {
+    const child = this.base.derive(index);
+    return new Wallet(pathToAccount(child), child, this.conn);
+  }
+
   public derive(subpath: string): Wallet {
     const child = this.base.derivePath(subpath);
     return new Wallet(pathToAccount(child), child, this.conn);
@@ -78,5 +84,10 @@ export class Wallet {
 
   public async info(subpath?: string) {
     return this.sys.accountInfo(this.account.publicKey);
+  }
+
+  public async loadProgram(binPath: string): Promise<Account> {
+    const bpfLoader = new BPFLoader(this);
+    return bpfLoader.loadFile(binPath);
   }
 }
