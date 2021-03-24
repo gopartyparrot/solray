@@ -13,7 +13,9 @@ export declare class Wallet {
     constructor(account: Account, base: bip32.BIP32Interface, conn: Connection);
     get address(): string;
     get pubkey(): PublicKey;
+    deriveIndex(index: number): Wallet;
     derive(subpath: string): Wallet;
     deriveAccount(subpath: string): Account;
     info(subpath?: string): Promise<import("@solana/web3.js").AccountInfo<Buffer> | null>;
+    loadProgram(binPath: string): Promise<Account>;
 }

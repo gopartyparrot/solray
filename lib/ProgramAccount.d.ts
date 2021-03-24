@@ -1,11 +1,11 @@
 /// <reference types="node" />
-import { PublicKey } from '@solana/web3.js';
+import { PublicKey } from "@solana/web3.js";
 export declare class ProgramAccount {
     pubkey: PublicKey;
-    noncedSeed: Buffer;
+    seeds: Buffer[];
+    nonce: number;
     programID: PublicKey;
-    static forSeed(seed: Buffer, programID: PublicKey): Promise<ProgramAccount>;
-    constructor(pubkey: PublicKey, noncedSeed: Buffer, programID: PublicKey);
+    static forSeeds(seeds: Buffer[], programID: PublicKey): Promise<ProgramAccount>;
+    constructor(pubkey: PublicKey, seeds: Buffer[], nonce: number, programID: PublicKey);
     get address(): string;
-    get nonce(): number;
 }
