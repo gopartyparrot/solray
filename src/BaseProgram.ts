@@ -34,7 +34,7 @@ export abstract class BaseProgram {
   protected async sendTx(insts: TransactionInstruction[], signers: Account[] = []): Promise<string> {
     const tx = new Transaction()
 
-    for (let inst of insts) {
+    for (const inst of insts) {
       tx.add(inst)
     }
 
@@ -70,7 +70,7 @@ export type InstructionAuthority = Account | Account[] | PublicKey[] | PublicKey
 function authsToKeys(auths: InstructionAuthority[]): InstructionKey[] {
   const keys: InstructionKey[] = []
 
-  for (let auth of auths) {
+  for (const auth of auths) {
     if (auth instanceof Array) {
       auth.forEach(a =>  keys.push(authToKey(a, false)));
     } else {

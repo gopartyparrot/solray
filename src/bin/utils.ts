@@ -1,6 +1,5 @@
 import fs from 'fs';
 import path from 'path';
-import fetch from 'node-fetch';
 
 import { exec as execute } from 'child_process';
 
@@ -33,7 +32,7 @@ const programBuilder = path.join(bpfSDKDir, 'rust/build.sh');
 // The Cargo.tomal package name may not equals the program name,
 // so we so we need to compatible this.
 function getSoFilePath(program: string, profilePath: string): string {
-  let soFilePath = path.join(profilePath, (program + '').replace(/\-/g, '_') + '.so');
+  const soFilePath = path.join(profilePath, (program + '').replace(/-/g, '_') + '.so');
   if (fs.existsSync(soFilePath)) {
     return soFilePath;
   }

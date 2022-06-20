@@ -19,6 +19,7 @@ export class Deployer {
       const jsonData = await readFile(filePath, "utf8")
       records = JSON.parse(jsonData)
     } finally {
+      // eslint-disable-next-line no-unsafe-finally
       return new Deployer(records, filePath)
     }
   }

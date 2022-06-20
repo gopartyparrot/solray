@@ -7,7 +7,6 @@ import {
 import { Wallet } from '.';
 
 import { promises as fs } from "fs";
-import { program } from "commander";
 
 export class BPFLoader {
   static programID = BPF_LOADER_PROGRAM_ID;

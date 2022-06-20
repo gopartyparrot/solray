@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-interface */
 import { TransactionInstruction, SYSVAR_RENT_PUBKEY } from '@solana/web3.js';
 
 
